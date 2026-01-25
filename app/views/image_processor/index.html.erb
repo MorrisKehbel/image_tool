@@ -1,0 +1,113 @@
+<%#
+  Image Processor - Main View
+  
+  This view handles two states:
+  1. Upload state: Shows drag-and-drop file upload area (when @images is empty)
+  2. Results state: Shows processed black-and-white images (when @images has content)
+  
+  Instance variables:
+    @images - Array of processed image hashes with :label, :src, :size keys
+  
+  Flash messages:
+    flash[:alert] - Error messages displayed below the upload area
+%>
+
+<main class="fullscreen-wrapper text-center p-2 p-md-4">
+
+  <header class="my-4">
+    <h1 class="display-3 fw-bolder">
+      <span class="d-block fw-bolder">Fotos einfach verarbeiten.</span>
+      <span class="d-block text-primary">Starke Kontraste oder flaches Grau?</span>
+    </h1>
+    <p class="mx-auto text-subtitle">
+      Verwandle deine Aufnahmen in Sekundenbruchteilen in professionelle Schwarz-Weiß-Aufnahmen.
+      <br>
+      Kein Datenmüll, keine Anmeldung – einfach hochladen und Ergebnis sichern.
+    </p>
+  </header>
+
+  <% unless @images&.any? %>
+    <section class="container" aria-labelledby="upload-heading">
+      <h2 id="upload-heading" class="visually-hidden">Bild hochladen</h2>
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <%= form_tag process_image_path, method: :post, multipart: true, id: "upload-form" do %>
+            <div class="card rounded-0 overflow-hidden upload-card">
+              <div class="card-body p-5 bg-white position-relative upload-area-hover">
+                <label for="image" class="upload-label position-absolute top-0 start-0 w-100 h-100 z-3">
+                  <span class="visually-hidden">Bild auswählen</span>
+                </label>
+                <%= file_field_tag :image,
+                    id: "image",
+                    class: "visually-hidden",
+                    accept: "image/*",
+                    onchange: "this.form.submit();" %>
+
+                <div class="text-center py-4" aria-hidden="true">
+                  <div class="mb-3 text-primary">
+                    <i class="bi bi-cloud-arrow-up upload-icon" aria-hidden="true"></i>
+                  </div>
+                  <p class="h4 fw-bold text-dark mb-1">Bild hierher ziehen</p>
+                  <p class="text-muted mb-0">oder klicken zum Auswählen</p>
+                  <p class="text-muted small mt-2">Maximale Dateigröße: 10 MB</p>
+                </div>
+              </div>
+            </div>
+          <% end %>
+
+          <div class="position-relative mt-3" style="min-height: 52px;">
+            <% if flash[:alert] %>
+              <div class="error-box position-absolute w-100 d-flex align-items-center" role="alert">
+                <span class="flex-grow-1"><%= flash[:alert] %></span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @images&.any? %>
+    <section class="container py-5" aria-labelledby="results-heading">
+      <h2 id="results-heading" class="h2 mb-4 fw-bold text-dark">Deine Ergebnisse</h2>
+      <p class="text-muted mb-4">Zwei Schwarz-Weiß-Stile: Starker Kontrast vs. Flaches Grau</p>
+
+      <div class="row g-4 justify-content-center">
+        <% @images.each_with_index do |image, index| %>
+          <div class="col-md-6">
+            <article class="card shadow border-0 rounded-4 overflow-hidden h-100 result-card">
+              <div class="card-header bg-success text-white py-2 d-flex align-items-center justify-content-between">
+                <span class="fw-bold"><%= image[:label] %></span>
+                <span class="badge bg-white text-success">Version <%= index + 1 %></span>
+              </div>
+              <div class="bg-light p-3 flex-grow-1 d-flex align-items-center justify-content-center">
+                <img src="<%= image[:src] %>"
+                     class="img-fluid rounded shadow-sm result-image"
+                     alt="Verarbeitetes Schwarz-Weiß-Bild - <%= image[:label] %>"
+                     loading="lazy">
+              </div>
+              <div class="card-footer bg-white border-0 py-3">
+                <a href="<%= image[:src] %>" 
+                   download="bild_<%= image[:size] %>.jpg" 
+                   class="btn btn-outline-success btn-sm w-100">
+                  <i class="bi bi-download me-1" aria-hidden="true"></i>
+                  Herunterladen
+                </a>
+              </div>
+            </article>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="text-center mt-5">
+        <p class="text-muted small mb-3">
+          Diese Bilder wurden temporär generiert und werden nicht gespeichert.
+        </p>
+        <%= link_to root_path, class: "btn btn-primary" do %>
+          <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
+          Neues Bild verarbeiten
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</main>

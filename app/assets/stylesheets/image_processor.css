@@ -1,0 +1,112 @@
+/* ==========================================================================
+   Image Processor Custom Styles
+   ========================================================================== */
+
+:root {
+  --main-color: #16ac7a;
+  --hover-color: #118860;
+  --bs-color-muted: #576071;
+}
+
+/* Layout */
+.fullscreen-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: rgb(246, 249, 252);
+}
+
+/* Typography */
+.text-primary {
+  color: var(--main-color) !important;
+}
+
+.text-subtitle {
+  font-weight: 400;
+  line-height: 1.5;
+  font-size: 1.1rem;
+  color: var(--bs-color-muted) !important;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--main-color) !important;
+  border-color: var(--main-color) !important;
+  border-radius: 0;
+  color: #fff !important;
+  padding: 1rem 2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.btn-primary:hover,
+.btn-primary:active,
+.btn-primary:focus {
+  background-color: var(--hover-color) !important;
+  border-color: var(--hover-color) !important;
+}
+
+/* Upload Area */
+.upload-area-hover {
+  cursor: pointer;
+}
+
+.upload-card:hover {
+  border-color: var(--main-color);
+}
+
+.upload-label {
+  cursor: pointer;
+}
+
+.upload-icon {
+  font-size: 4rem;
+}
+
+/* Image result cards */
+.result-card {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.result-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.result-image {
+  max-height: 400px;
+  object-fit: contain;
+}
+
+/* Download button */
+.btn-outline-success:hover,
+.btn-outline-success:active,
+.btn-outline-success:focus {
+  color: #fff !important;
+  background-color: var(--main-color) !important;
+  border-color: var(--main-color) !important;
+}
+
+/* Error Box */
+.error-box {
+  background-color: #fff;
+  border-left: 2px solid #dc3545;
+  padding: 0.875rem 1rem;
+  font-size: 0.9rem;
+  color: #4a4a4a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

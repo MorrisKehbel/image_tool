@@ -1,2 +1,36 @@
+// ==========================================================================
+// Bootstrap Variable Overrides
+// ==========================================================================
+
+// Colors
+$primary: #16ac7a;
+$success: #16ac7a;
+
+// Typography
+$font-family-base: "Apfel Grotezk", "Arial", "Helvetica", sans-serif, system-ui;
+$headings-font-weight: 700;
+
+// Buttons
+$btn-border-radius: 0;
+$btn-border-radius-sm: 0;
+$btn-border-radius-lg: 0;
+$btn-padding-y: 1rem;
+$btn-padding-x: 2rem;
+$btn-font-weight: 600;
+$btn-font-size: 0.9rem;
+
+// Cards
+$card-border-radius: 0;
+
+// ==========================================================================
+// Bootstrap Import
+// ==========================================================================
+
 @import 'bootstrap/scss/bootstrap';
 @import 'bootstrap-icons/font/bootstrap-icons';
+
+// ==========================================================================
+// Custom Styles
+// ==========================================================================
+
+@import "image_processor";
