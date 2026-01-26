@@ -31,8 +31,12 @@
       <h2 id="upload-heading" class="visually-hidden">Bild hochladen</h2>
       <div class="row justify-content-center">
         <div class="col-lg-8">
-          <%= form_tag process_image_path, method: :post, multipart: true, id: "upload-form" do %>
-            <div class="card rounded-0 overflow-hidden upload-card">
+          <%= form_tag process_image_path, method: :post, multipart: true, id: "upload-form",
+              data: { 
+                controller: "dropzone",
+                action: "dragenter->dropzone#dragenter dragover->dropzone#dragover dragleave->dropzone#dragleave drop->dropzone#drop"
+              } do %>
+            <div class="card rounded-0 overflow-hidden upload-card" data-dropzone-target="card">
               <div class="card-body p-5 bg-white position-relative upload-area-hover">
                 <label for="image" class="upload-label position-absolute top-0 start-0 w-100 h-100 z-3">
                   <span class="visually-hidden">Bild auswählen</span>
@@ -41,6 +45,7 @@
                     id: "image",
                     class: "visually-hidden",
                     accept: "image/*",
+                    data: { dropzone_target: "input" },
                     onchange: "this.form.submit();" %>
 
                 <div class="text-center py-4" aria-hidden="true">

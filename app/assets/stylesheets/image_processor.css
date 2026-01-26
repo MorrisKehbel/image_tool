@@ -65,6 +65,11 @@
   font-size: 4rem;
 }
 
+/* Dropzone (drag and drop) */
+.upload-card.dropzone-active {
+  border-color: var(--main-color);
+}
+
 /* Image result cards */
 .result-card {
   animation: fadeInUp 0.4s ease-out;
