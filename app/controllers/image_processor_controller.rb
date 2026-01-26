@@ -1,3 +1,5 @@
+require "vips"
+
 class ImageProcessorController < ApplicationController
   MAX_SIZE = 10.megabytes
   MAX_DIMENSION = 1200
