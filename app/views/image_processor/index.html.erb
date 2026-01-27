@@ -12,7 +12,7 @@
     flash[:alert] - Error messages displayed below the upload area
 %>
 
-<main class="fullscreen-wrapper text-center p-2 p-md-4">
+<main class="fullscreen-wrapper text-center p-2 p-md-4" data-controller="image-processor">
 
   <header class="my-4">
     <h1 class="display-3 fw-bolder">
@@ -26,8 +26,7 @@
     </p>
   </header>
 
-  <% unless @images&.any? %>
-    <section class="container" aria-labelledby="upload-heading">
+  <section class="container <%= 'd-none' if @images&.any? %>" aria-labelledby="upload-heading" data-image-processor-target="upload">
       <h2 id="upload-heading" class="visually-hidden">Bild hochladen</h2>
       <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -70,15 +69,13 @@
         </div>
       </div>
     </section>
-  <% end %>
 
-  <% if @images&.any? %>
-    <section class="container py-5" aria-labelledby="results-heading">
+  <section class="container py-5 <%= 'd-none' unless @images&.any? %>" aria-labelledby="results-heading" data-image-processor-target="results">
       <h2 id="results-heading" class="h2 mb-4 fw-bold text-dark">Deine Ergebnisse</h2>
       <p class="text-muted mb-4">Zwei Schwarz-Weiß-Stile: Starker Kontrast vs. Flaches Grau</p>
 
       <div class="row g-4 justify-content-center">
-        <% @images.each_with_index do |image, index| %>
+        <% @images&.each_with_index do |image, index| %>
           <div class="col-md-6">
             <article class="card shadow border-0 rounded-4 overflow-hidden h-100 result-card">
               <div class="card-header bg-success text-white py-2 d-flex align-items-center justify-content-between">
@@ -108,11 +105,10 @@
         <p class="text-muted small mb-3">
           Diese Bilder wurden temporär generiert und werden nicht gespeichert.
         </p>
-        <%= link_to root_path, class: "btn btn-primary" do %>
+        <button type="button" class="btn btn-primary" data-action="image-processor#reset">
           <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
           Neues Bild verarbeiten
-        <% end %>
+        </button>
       </div>
     </section>
-  <% end %>
 </main>
