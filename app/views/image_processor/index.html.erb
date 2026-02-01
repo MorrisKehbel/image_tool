@@ -12,21 +12,21 @@
     flash[:alert] - Error messages displayed below the upload area
 %>
 
-<main class="fullscreen-wrapper text-center p-2 p-md-4" data-controller="image-processor">
+<main class="fullscreen-wrapper text-center py-4 px-2 px-md-4" data-controller="image-processor">
+  <section class="container <%= 'd-none' if @images&.any? %>" aria-labelledby="upload-heading" data-image-processor-target="upload">
 
-  <header class="my-4">
-    <h1 class="display-3 fw-bolder">
-      <span class="d-block fw-bolder">Fotos einfach verarbeiten.</span>
-      <span class="d-block text-primary">Starke Kontraste oder flaches Grau?</span>
-    </h1>
-    <p class="mx-auto text-subtitle">
-      Verwandle deine Aufnahmen in Sekundenbruchteilen in professionelle Schwarz-Weiß-Aufnahmen.
-      <br>
-      Kein Datenmüll, keine Anmeldung – einfach hochladen und Ergebnis sichern.
-    </p>
-  </header>
+      <header class="my-4 upload-header">
+        <h1 class="display-3 fw-bolder">
+          <span class="d-block fw-bolder">Fotos einfach verarbeiten.</span>
+          <span class="d-block text-primary">Starke Kontraste oder flaches Grau?</span>
+        </h1>
+        <p class="mx-auto text-subtitle">
+          Verwandle deine Aufnahmen in Sekundenbruchteilen in professionelle Schwarz-Weiß-Aufnahmen.
+          <br>
+          Kein Datenmüll, keine Anmeldung – einfach hochladen und Ergebnis sichern.
+        </p>
+      </header>
 
-  <section class="container mt-4 <%= 'd-none' if @images&.any? %>" aria-labelledby="upload-heading" data-image-processor-target="upload">
       <h2 id="upload-heading" class="visually-hidden">Bild hochladen</h2>
       <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -71,19 +71,26 @@
     </section>
 
   <section class="container mt-4 <%= 'd-none' unless @images&.any? %>" aria-labelledby="results-heading" data-image-processor-target="results">
-      <h2 id="results-heading" class="h2 mb-4 fw-bold text-dark">Deine Ergebnisse</h2>
-      <p class="text-muted mb-4">Zwei Schwarz-Weiß-Stile: Starker Kontrast vs. Flaches Grau</p>
+      <header class="mb-4 result-header">
+        <h2 id="results-heading" class="display-3 fw-bolder">
+          <span class="d-block fw-bolder text-dark">Deine Ergebnisse</span>
+        </h2>
+        
+        <p class="mx-auto text-muted lead">
+          Zwei Schwarz-Weiß-Stile: Starker Kontrast vs. Flaches Grau
+        </p>
+      </header>
 
       <div class="row g-4 justify-content-center">
         <% @images&.each_with_index do |image, index| %>
           <div class="col-md-6" data-controller="histogram">
-            <article class="card shadow border-0 rounded-4 overflow-hidden h-100 result-card">
+            <article class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 result-card">
               <div class="card-header bg-success text-white py-2 d-flex align-items-center justify-content-between">
                 <span class="fw-bold"><%= image[:label] %></span>
                 <span class="badge bg-white text-success">Version <%= index + 1 %></span>
               </div>
-              <div class="image-container position-relative">
-                <div class="bg-light p-3 d-flex align-items-center justify-content-center">
+              <div class="image-container position-relative px-5">
+                <div class="p-3 d-flex align-items-center justify-content-center">
                   <img src="<%= image[:src] %>"
                        class="img-fluid rounded shadow-sm result-image"
                        alt="Verarbeitetes Schwarz-Weiß-Bild - <%= image[:label] %>"
@@ -94,20 +101,20 @@
                 <div class="histogram-overlay" data-histogram-target="overlay">
                   <div class="histogram-overlay-header">
                     <span class="fw-semibold"><i class="bi bi-bar-chart-fill me-2"></i>Helligkeitsverteilung</span>
-                    <button type="button" class="histogram-close" data-action="histogram#toggleOverlay" aria-label="Schließen">
-                      <i class="bi bi-x-lg"></i>
-                    </button>
                   </div>
                   <div class="histogram-chart">
                     <canvas data-histogram-target="canvas" aria-label="Histogramm der Helligkeitsverteilung"></canvas>
                   </div>
                 </div>
-                
-                <button type="button" class="histogram-btn" data-action="histogram#toggleOverlay" title="Histogramm anzeigen">
+                <button type="button" 
+                  class="histogram-btn" 
+                  data-histogram-target="button" 
+                  data-action="histogram#toggleOverlay" 
+                  title="Histogramm anzeigen">
                   <i class="bi bi-bar-chart-fill"></i>
                 </button>
               </div>
-              <div class="card-footer bg-white border-0 py-3">
+              <div class="card-footer py-3">
                 <a href="<%= image[:src] %>" 
                    download="bild_<%= image[:size] %>.jpg" 
                    class="btn btn-outline-success btn-sm w-100">
