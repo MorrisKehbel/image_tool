@@ -7,7 +7,7 @@ import Chart from "chart.js/auto"
  * Uses Chart.js to render a smooth area chart visualization.
  */
 export default class extends Controller {
-  static targets = ["canvas", "image", "overlay"]
+  static targets = ["canvas", "image", "overlay", "button"]
 
   connect() {
     // Wait for image to load, then generate histogram
@@ -20,6 +20,21 @@ export default class extends Controller {
 
   toggleOverlay() {
     this.overlayTarget.classList.toggle("active")
+    
+    const isActive = this.overlayTarget.classList.contains("active")
+    const icon = this.buttonTarget.querySelector("i")
+  
+    if (isActive) {
+      icon.classList.remove("bi-bar-chart-fill")
+      icon.classList.add("bi-x-lg")
+
+      this.buttonTarget.title = "Schließen"
+    } else {
+      icon.classList.remove("bi-x-lg")
+      icon.classList.add("bi-bar-chart-fill")
+
+      this.buttonTarget.title = "Histogramm anzeigen"
+    }
   }
 
   generateHistogram() {
