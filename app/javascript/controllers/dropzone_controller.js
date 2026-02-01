@@ -62,8 +62,8 @@ export default class extends Controller {
     dataTransfer.items.add(files[0])
     this.inputTarget.files = dataTransfer.files
 
-    // Submits the form for server-side processing
-    this.element.submit()
+    // Trigger change event to handle loading state and form submission
+    this.inputTarget.dispatchEvent(new Event('change', { bubbles: true }))
   }
 
   // Returns the CSS class to apply when dragging (default: "dropzone-active")

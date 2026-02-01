@@ -15,7 +15,7 @@
 <main class="fullscreen-wrapper text-center py-4 px-2 px-md-4" data-controller="image-processor">
   <section class="container <%= 'd-none' if @images&.any? %>" aria-labelledby="upload-heading" data-image-processor-target="upload">
 
-      <header class="my-4 upload-header">
+      <header class="my-4 upload-header <%= 'animation-played' if flash[:alert] %>">
         <h1 class="display-3 fw-bolder">
           <span class="d-block fw-bolder">Fotos einfach verarbeiten.</span>
           <span class="d-block text-primary">Starke Kontraste oder flaches Grau?</span>
@@ -31,11 +31,12 @@
       <div class="row justify-content-center">
         <div class="col-lg-8">
           <%= form_tag process_image_path, method: :post, multipart: true, id: "upload-form",
-              data: { 
+              data: {
                 controller: "dropzone",
-                action: "dragenter->dropzone#dragenter dragover->dropzone#dragover dragleave->dropzone#dragleave drop->dropzone#drop"
+                action: "dragenter->dropzone#dragenter dragover->dropzone#dragover dragleave->dropzone#dragleave drop->dropzone#drop",
+                image_processor_target: "form"
               } do %>
-            <div class="card rounded-0 overflow-hidden upload-card" data-dropzone-target="card">
+            <div class="card rounded-0 overflow-hidden upload-card <%= 'animation-played' if flash[:alert] %>" data-dropzone-target="card" data-image-processor-target="uploadCard">
               <div class="card-body p-5 bg-white position-relative upload-area-hover">
                 <label for="image" class="upload-label position-absolute top-0 start-0 w-100 h-100 z-3">
                   <span class="visually-hidden">Bild auswählen</span>
@@ -44,8 +45,11 @@
                     id: "image",
                     class: "visually-hidden",
                     accept: "image/*",
-                    data: { dropzone_target: "input" },
-                    onchange: "this.form.submit();" %>
+                    data: {
+                      dropzone_target: "input",
+                      image_processor_target: "fileInput",
+                      action: "change->image-processor#handleFileChange"
+                    } %>
 
                 <div class="text-center py-4" aria-hidden="true">
                   <div class="mb-3 text-primary">
@@ -54,6 +58,18 @@
                   <p class="h4 fw-bold text-dark mb-1">Bild hierher ziehen</p>
                   <p class="text-muted mb-0">oder klicken zum Auswählen</p>
                   <p class="text-muted small mt-2">Maximale Dateigröße: 10 MB</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card rounded-0 overflow-hidden upload-card animation-played d-none" data-image-processor-target="loading">
+              <div class="card-body p-5 bg-white">
+                <div class="loading-content text-center py-4">
+                  <div class="spinner-border text-primary mb-3" role="status" style="width: 4rem; height: 4rem;">
+                    <span class="visually-hidden">Lädt...</span>
+                  </div>
+                  <h2 id="loading-heading" class="h4 fw-bold text-dark">Bild wird verarbeitet...</h2>
+                  <p class="text-muted">Bitte warten Sie einen Moment</p>
                 </div>
               </div>
             </div>
@@ -128,7 +144,7 @@
       </div>
 
       <div class="text-center mt-5">
-        <p class="text-muted small mb-3">
+        <p class="text-muted result-subtitle small mb-3">
           Diese Bilder wurden temporär generiert und werden nicht gespeichert.
         </p>
         <button type="button" class="btn btn-primary" data-action="image-processor#reset">
