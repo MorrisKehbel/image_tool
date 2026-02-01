@@ -7,37 +7,28 @@ class ImageProcessorController < ApplicationController
   def index; end
 
   def create
-    # Debug: Log all params
-    Rails.logger.info("=== IMAGE UPLOAD DEBUG ===")
-    Rails.logger.info("params[:image] present? #{params[:image].present?}")
-    Rails.logger.info("params[:image] class: #{params[:image].class}")
+    uploaded_image = upload_params[:image]
 
-    if params[:image].present?
-      Rails.logger.info("content_type: #{params[:image].content_type}")
-      Rails.logger.info("original_filename: #{params[:image].original_filename}")
-      Rails.logger.info("size: #{params[:image].size}")
-    end
-    Rails.logger.info("=== END DEBUG ===")
     # Validation: Check if image is present
-    unless params[:image].present?
+    unless uploaded_image.present?
       flash.now[:alert] = "Bitte wähle ein Bild aus"
       return render :index, status: :unprocessable_entity
     end
 
     # Validation: Check if image content type is valid
-    unless valid_content_type?
-      flash.now[:alert] = "Ungültiges Dateiformat: #{params[:image].content_type}. Bitte lade ein Bild hoch."
+    unless valid_content_type?(uploaded_image)
+      flash.now[:alert] = "Ungültiges Dateiformat: #{uploaded_image.content_type}. Bitte lade ein Bild hoch."
       return render :index, status: :unprocessable_entity
     end
 
     # Validation: Check if image size is valid
-    unless valid_size?
-      flash.now[:alert] = "Datei zu groß (#{(params[:image].size / 1.megabyte).round(1)} MB). Maximum: 10 MB"
+    unless valid_size?(uploaded_image)
+      flash.now[:alert] = "Datei zu groß (#{(uploaded_image.size / 1.megabyte).round(1)} MB). Maximum: 10 MB"
       return render :index, status: :unprocessable_entity
     end
 
     # Process image
-    process_images
+    process_images(uploaded_image)
     render :index
 
   # Error handling
@@ -53,19 +44,26 @@ class ImageProcessorController < ApplicationController
 
   private
 
+  def upload_params
+    params.permit(:image)
+  end
+
   # Call Validation: Check if content type is any image format
-  def valid_content_type?
-    params[:image].content_type.to_s.downcase.start_with?("image/")
+  def valid_content_type?(uploaded_image)
+    uploaded_image&.content_type.to_s.downcase.start_with?("image/")
   end
 
   # Call Validation: Check if image size is valid
-  def valid_size?
-    params[:image].size <= MAX_SIZE
+  def valid_size?(uploaded_image)
+    uploaded_image&.size.to_i <= MAX_SIZE
   end
 
   # Process images
-  def process_images
-    source_path = params[:image].path
+  def process_images(uploaded_image)
+    high_contrast_file = nil
+    flat_gray_file = nil
+
+    source_path = uploaded_image.path
 
     # Load source image with random access (required for multiple operations)
     source = Vips::Image.new_from_file(source_path)
@@ -96,8 +94,8 @@ class ImageProcessorController < ApplicationController
   ensure
     # Clean up temp files
     [ high_contrast_file, flat_gray_file ].compact.each do |file|
-      file.close rescue nil
-      file.unlink rescue nil
+      file&.close
+      file&.unlink
     end
   end
 

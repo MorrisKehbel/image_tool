@@ -30,7 +30,7 @@
       <h2 id="upload-heading" class="visually-hidden">Bild hochladen</h2>
       <div class="row justify-content-center">
         <div class="col-lg-8">
-          <%= form_tag process_image_path, method: :post, multipart: true, id: "upload-form",
+          <%= form_with url: process_image_path, method: :post, multipart: true, id: "upload-form",
               data: {
                 controller: "dropzone",
                 action: "dragenter->dropzone#dragenter dragover->dropzone#dragover dragleave->dropzone#dragleave drop->dropzone#drop",
