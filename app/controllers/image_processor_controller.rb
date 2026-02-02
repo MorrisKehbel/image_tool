@@ -2,108 +2,128 @@ require "vips"
 
 class ImageProcessorController < ApplicationController
   MAX_SIZE = 10.megabytes
-  MAX_DIMENSION = 1200
+  MAX_DIMENSION = 2560
+  PREVIEW_DIMENSION = 800
+  PREVIEW_QUALITY = 60
+  DOWNLOAD_QUALITY = 100
+  VARIANTS = {
+    "high_contrast" => { linear_a: 1.4, linear_b: -30 },
+    "flat_gray" => { linear_a: 0.7, linear_b: 40 }
+  }.freeze
 
+  # Ensure libvips memory is released after processing
+  after_action :force_gc_cleanup, only: [ :preview, :download ]
+
+  # GET / - Display upload form
   def index; end
 
-  def create
-    # Debug: Log all params
-    Rails.logger.info("=== IMAGE UPLOAD DEBUG ===")
-    Rails.logger.info("params[:image] present? #{params[:image].present?}")
-    Rails.logger.info("params[:image] class: #{params[:image].class}")
+  # POST /preview - Stream low-quality preview image
+  def preview
+    validate_upload!
+    validate_variant!
 
-    if params[:image].present?
-      Rails.logger.info("content_type: #{params[:image].content_type}")
-      Rails.logger.info("original_filename: #{params[:image].original_filename}")
-      Rails.logger.info("size: #{params[:image].size}")
-    end
-    Rails.logger.info("=== END DEBUG ===")
-    # Validation: Check if image is present
-    unless params[:image].present?
-      flash.now[:alert] = "Bitte wähle ein Bild aus"
-      return render :index, status: :unprocessable_entity
-    end
+    jpeg_bytes = process_image(
+      max_dimension: PREVIEW_DIMENSION,
+      quality: PREVIEW_QUALITY
+    )
 
-    # Validation: Check if image content type is valid
-    unless valid_content_type?
-      flash.now[:alert] = "Ungültiges Dateiformat: #{params[:image].content_type}. Bitte lade ein Bild hoch."
-      return render :index, status: :unprocessable_entity
-    end
+    send_data jpeg_bytes,
+              type: "image/jpeg",
+              disposition: "inline"
 
-    # Validation: Check if image size is valid
-    unless valid_size?
-      flash.now[:alert] = "Datei zu groß (#{(params[:image].size / 1.megabyte).round(1)} MB). Maximum: 10 MB"
-      return render :index, status: :unprocessable_entity
-    end
-
-    # Process image
-    process_images
-    render :index
-
-  # Error handling
+  rescue ValidationError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   rescue Vips::Error => e
-    Rails.logger.error("Image processing failed: #{e.message}")
-    flash.now[:alert] = "Bildverarbeitung fehlgeschlagen: #{e.message}"
-    render :index, status: :unprocessable_entity
-  rescue StandardError => e
-    Rails.logger.error("Unexpected error: #{e.class} - #{e.message}")
-    flash.now[:alert] = "Unerwarteter Fehler: #{e.message}"
-    render :index, status: :unprocessable_entity
+    Rails.logger.error("[ImageProcessor] Vips error: #{e.message}")
+    render json: { error: "Bildverarbeitung fehlgeschlagen" }, status: :unprocessable_entity
+  end
+
+  # POST /download - Stream image as attachment
+  def download
+    validate_upload!
+    validate_variant!
+
+    jpeg_bytes = process_image(
+      max_dimension: MAX_DIMENSION,
+      quality: DOWNLOAD_QUALITY
+    )
+
+    send_data jpeg_bytes,
+              type: "image/jpeg",
+              disposition: "attachment",
+              filename: "bild_#{params[:variant]}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.jpg"
+
+  rescue ValidationError => e
+    flash[:alert] = e.message
+    redirect_to root_path
+  rescue Vips::Error => e
+    Rails.logger.error("[ImageProcessor] Vips error: #{e.message}")
+    flash[:alert] = "Bildverarbeitung fehlgeschlagen. Bitte versuche ein anderes Bild."
+    redirect_to root_path
   end
 
   private
 
-  # Call Validation: Check if content type is any image format
-  def valid_content_type?
-    params[:image].content_type.to_s.downcase.start_with?("image/")
-  end
+  class ValidationError < StandardError; end
 
-  # Call Validation: Check if image size is valid
-  def valid_size?
-    params[:image].size <= MAX_SIZE
-  end
+  def validate_upload!
+    raise ValidationError, "Bitte wähle ein Bild aus." unless params[:image].present?
 
-  # Process images
-  def process_images
-    source_path = params[:image].path
+    content_type = params[:image].content_type.to_s.downcase
+    unless content_type.start_with?("image/")
+      raise ValidationError, "Ungültiges Dateiformat."
+    end
 
-    # Load source image with random access (required for multiple operations)
-    source = Vips::Image.new_from_file(source_path)
-
-    # Resize to reasonable max size while preserving aspect ratio
-    scale = [ MAX_DIMENSION.to_f / source.width, MAX_DIMENSION.to_f / source.height, 1.0 ].min
-    source = source.resize(scale) if scale < 1.0
-
-    # Convert to grayscale first
-    grayscale = source.colourspace(:b_w)
-
-    # Version 1: "Starker Kontrast" - High contrast B&W
-    high_contrast = grayscale.linear([ 1.4 ], [ -30 ])
-
-    high_contrast_file = Tempfile.new([ "high_contrast", ".jpg" ])
-    high_contrast.jpegsave(high_contrast_file.path, Q: 90)
-
-    # Version 2: "Flaches Grau" - Soft/flat B&W
-    flat_gray = grayscale.linear([ 0.7 ], [ 40 ])
-
-    flat_gray_file = Tempfile.new([ "flat_gray", ".jpg" ])
-    flat_gray.jpegsave(flat_gray_file.path, Q: 90)
-
-    @images = [
-      { src: encode_image(high_contrast_file, "image/jpeg"), label: "Starker Kontrast", size: "high_contrast" },
-      { src: encode_image(flat_gray_file, "image/jpeg"), label: "Flaches Grau", size: "flat_gray" }
-    ]
-  ensure
-    # Clean up temp files
-    [ high_contrast_file, flat_gray_file ].compact.each do |file|
-      file.close rescue nil
-      file.unlink rescue nil
+    if params[:image].size > MAX_SIZE
+      size_mb = (params[:image].size.to_f / 1.megabyte).round(1)
+      raise ValidationError, "Datei zu groß (#{size_mb} MB)."
     end
   end
 
-  # Encode image to base64 for display/download
-  def encode_image(file, content_type)
-    data = File.binread(file.path)
-    "data:#{content_type};base64,#{Base64.strict_encode64(data)}"
+  def validate_variant!
+    unless VARIANTS.key?(params[:variant])
+      raise ValidationError, "Ungültige Variante."
+    end
+  end
+
+  # Process image and return JPEG bytes.
+  def process_image(max_dimension:, quality:)
+    config = VARIANTS[params[:variant]]
+
+    # Load from file - Rack manages the tempfile lifecycle
+    image = Vips::Image.new_from_file(params[:image].path)
+
+    # Auto-rotate based on EXIF orientation
+    image = image.autorot
+
+    # Resize to fit within max dimension
+    scale = [
+      max_dimension.to_f / image.width,
+      max_dimension.to_f / image.height,
+      1.0
+    ].min
+    image = image.resize(scale) if scale < 1.0
+
+    # Convert to grayscale
+    image = image.colourspace(:b_w)
+
+    # Apply contrast adjustment
+    image = image.linear([ config[:linear_a] ], [ config[:linear_b] ])
+
+    # Get JPEG bytes - this forces evaluation of the entire pipeline
+    # All processing happens here
+    image.jpegsave_buffer(Q: quality, strip: true)
+  end
+
+  # release libvips memory
+  def force_gc_cleanup
+
+    # clean up Vips::Image objects
+    GC.start
+
+    # Log memory in development
+    if Rails.env.development?
+      Rails.logger.debug "[Vips] Memory: #{(Vips.tracked_mem / 1024.0 / 1024.0).round(2)} MB"
+    end
   end
 end

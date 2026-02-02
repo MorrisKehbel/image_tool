@@ -9,7 +9,12 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/")
+  # Image processor routes
   root "image_processor#index"
-  post "/", to: "image_processor#create", as: :process_image
+
+  # POST /preview - Stream low-quality preview
+  post "/preview", to: "image_processor#preview", as: :preview_image
+
+  # POST /download - Stream full-quality image as attachment
+  post "/download", to: "image_processor#download", as: :download_image
 end
