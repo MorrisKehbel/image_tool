@@ -24,6 +24,8 @@ export default class extends Controller {
     this.blobUrls = []
     // Store the selected file
     this.selectedFile = null
+    // Track drag enter/leave for nested elements
+    this.dragCounter = 0
   }
 
   disconnect() {
@@ -48,6 +50,7 @@ export default class extends Controller {
   // Drag and drop handlers
   handleDragEnter(event) {
     event.preventDefault()
+    this.dragCounter++
     this.uploadCardTarget.classList.add("dropzone-active")
   }
 
@@ -57,23 +60,35 @@ export default class extends Controller {
 
   handleDragLeave(event) {
     event.preventDefault()
-    this.uploadCardTarget.classList.remove("dropzone-active")
+    this.dragCounter--
+    if (this.dragCounter === 0) {
+      this.uploadCardTarget.classList.remove("dropzone-active")
+    }
   }
 
   handleDrop(event) {
     event.preventDefault()
+    this.dragCounter = 0
     this.uploadCardTarget.classList.remove("dropzone-active")
 
     const file = event.dataTransfer.files[0]
     if (file && file.type.startsWith("image/")) {
       this.processFile(file)
     } else {
-      this.showError("Bitte wähle eine Bilddatei aus.")
+      const type = file?.type || "unbekannt"
+      this.showError(`Ungültiges Dateiformat: ${type}. Bitte lade ein Bild hoch.`)
     }
   }
 
   // Main processing flow
   async processFile(file) {
+    // Validate file type first
+    if (!file.type.startsWith("image/")) {
+      const type = file.type || "unbekannt"
+      this.showError(`Ungültiges Dateiformat: ${type}. Bitte lade ein Bild hoch.`)
+      return
+    }
+
     // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
       this.showError(`Datei zu groß (${(file.size / 1024 / 1024).toFixed(1)} MB).`)
@@ -126,7 +141,7 @@ export default class extends Controller {
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
 
-    const response = await fetch("/preview", {
+    const response = await fetch("/image/preview", {
       method: "POST",
       headers: {
         "X-CSRF-Token": csrfToken
@@ -189,9 +204,10 @@ export default class extends Controller {
     // Revoke blob URLs to free memory
     this.revokeBlobUrls()
 
-    // Reset file input
+    // Reset file input and drag state
     this.fileInputTarget.value = ""
     this.selectedFile = null
+    this.dragCounter = 0
 
     // Hide previews, show spinners
     this.previewHighContrastTarget.classList.add("d-none")
