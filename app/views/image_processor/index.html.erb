@@ -13,144 +13,191 @@
 %>
 
 <main class="fullscreen-wrapper text-center py-4 px-2 px-md-4" data-controller="image-processor">
-  <section class="container <%= 'd-none' if @images&.any? %>" aria-labelledby="upload-heading" data-image-processor-target="upload">
+  <section class="container" aria-labelledby="upload-heading" data-image-processor-target="uploadSection">
 
-      <header class="my-4 upload-header <%= 'animation-played' if flash[:alert] %>">
-        <h1 class="display-3 fw-bolder">
-          <span class="d-block fw-bolder">Fotos einfach verarbeiten.</span>
-          <span class="d-block text-primary">Starke Kontraste oder flaches Grau?</span>
-        </h1>
-        <p class="mx-auto text-subtitle">
-          Verwandle deine Aufnahmen in Sekundenbruchteilen in professionelle Schwarz-Weiß-Aufnahmen.
-          <br>
-          Kein Datenmüll, keine Anmeldung – einfach hochladen und Ergebnis sichern.
-        </p>
-      </header>
+    <header class="my-4 upload-header <%= 'animation-played' if flash[:alert] %>">
+      <h1 class="display-3 fw-bolder">
+        <span class="d-block fw-bolder">Fotos einfach verarbeiten.</span>
+        <span class="d-block text-primary">Starke Kontraste oder flaches Grau?</span>
+      </h1>
+      <p class="mx-auto text-subtitle">
+        Verwandle deine Aufnahmen in Sekundenbruchteilen in professionelle Schwarz-Weiß-Aufnahmen.
+        <br>
+        Kein Datenmüll, keine Anmeldung – einfach hochladen und Ergebnis sichern.
+      </p>
+    </header>
 
-      <h2 id="upload-heading" class="visually-hidden">Bild hochladen</h2>
-      <div class="row justify-content-center">
-        <div class="col-lg-8">
-          <%= form_with url: process_image_path, method: :post, multipart: true, id: "upload-form",
-              data: {
-                controller: "dropzone",
-                action: "dragenter->dropzone#dragenter dragover->dropzone#dragover dragleave->dropzone#dragleave drop->dropzone#drop",
-                image_processor_target: "form"
-              } do %>
-            <div class="card rounded-0 overflow-hidden upload-card <%= 'animation-played' if flash[:alert] %>" data-dropzone-target="card" data-image-processor-target="uploadCard">
-              <div class="card-body p-5 bg-white position-relative upload-area-hover">
-                <label for="image" class="upload-label position-absolute top-0 start-0 w-100 h-100 z-3">
-                  <span class="visually-hidden">Bild auswählen</span>
-                </label>
-                <%= file_field_tag :image,
-                    id: "image",
-                    class: "visually-hidden",
-                    accept: "image/*",
-                    data: {
-                      dropzone_target: "input",
-                      image_processor_target: "fileInput",
-                      action: "change->image-processor#handleFileChange"
-                    } %>
+    <h2 id="upload-heading" class="visually-hidden">Bild hochladen</h2>
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <input type="file"
+               id="image-input"
+               accept="image/*"
+               class="d-none"
+               data-image-processor-target="fileInput"
+               data-action="change->image-processor#handleFileSelect">
 
-                <div class="text-center py-4" aria-hidden="true">
-                  <div class="mb-3 text-primary">
-                    <i class="bi bi-cloud-arrow-up upload-icon" aria-hidden="true"></i>
-                  </div>
-                  <p class="h4 fw-bold text-dark mb-1">Bild hierher ziehen</p>
-                  <p class="text-muted mb-0">oder klicken zum Auswählen</p>
-                  <p class="text-muted small mt-2">Maximale Dateigröße: 10 MB</p>
-                </div>
+        <div class="card rounded-0 overflow-hidden upload-card <%= 'animation-played' if flash[:alert] %>"
+             data-image-processor-target="uploadCard"
+             data-action="click->image-processor#triggerFileSelect dragenter->image-processor#handleDragEnter dragover->image-processor#handleDragOver dragleave->image-processor#handleDragLeave drop->image-processor#handleDrop">
+          <div class="card-body p-5 bg-white position-relative upload-area-hover">
+            <div class="text-center py-4" aria-hidden="true">
+              <div class="mb-3 text-primary">
+                <i class="bi bi-cloud-arrow-up upload-icon" aria-hidden="true"></i>
               </div>
+              <p class="h4 fw-bold text-dark mb-1">Bild hierher ziehen</p>
+              <p class="text-muted mb-0">oder klicken zum Auswählen</p>
+              <p class="text-muted small mt-2">Maximale Dateigröße: 10 MB</p>
             </div>
+          </div>
+        </div>
 
-            <div class="card rounded-0 overflow-hidden upload-card animation-played d-none" data-image-processor-target="loading">
-              <div class="card-body p-5 bg-white">
-                <div class="loading-content text-center py-4">
-                  <div class="spinner-border text-primary mb-3" role="status" style="width: 4rem; height: 4rem;">
-                    <span class="visually-hidden">Lädt...</span>
-                  </div>
-                  <h2 id="loading-heading" class="h4 fw-bold text-dark">Bild wird verarbeitet...</h2>
-                  <p class="text-muted">Bitte warten Sie einen Moment</p>
-                </div>
+        <div class="card rounded-0 overflow-hidden upload-card animation-played d-none" data-image-processor-target="loadingCard">
+          <div class="card-body p-5 bg-white">
+            <div class="loading-content text-center py-4">
+              <div class="spinner-border text-primary mb-3" role="status" style="width: 4rem; height: 4rem;">
+                <span class="visually-hidden">Lädt...</span>
               </div>
+              <h2 id="loading-heading" class="h4 fw-bold text-dark">Bild wird verarbeitet...</h2>
+              <p class="text-muted">Bitte warten Sie einen Moment</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="position-relative mt-3" style="min-height: 52px;">
+          <% if flash[:alert] %>
+            <div class="error-box position-absolute w-100 d-flex align-items-center" role="alert">
+              <span class="flex-grow-1"><%= flash[:alert] %></span>
             </div>
           <% end %>
-
-          <div class="position-relative mt-3" style="min-height: 52px;">
-            <% if flash[:alert] %>
-              <div class="error-box position-absolute w-100 d-flex align-items-center" role="alert">
-                <span class="flex-grow-1"><%= flash[:alert] %></span>
-              </div>
-            <% end %>
+          <div class="d-none position-absolute w-100" data-image-processor-target="errorBox">
+            <div class="error-box d-flex align-items-center" role="alert">
+              <span data-image-processor-target="errorMessage"></span>
+            </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-  <section class="container mt-4 <%= 'd-none' unless @images&.any? %>" aria-labelledby="results-heading" data-image-processor-target="results">
-      <header class="mb-4 result-header">
-        <h2 id="results-heading" class="display-3 fw-bolder">
-          <span class="d-block fw-bolder text-dark">Deine Ergebnisse</span>
-        </h2>
-        
-        <p class="mx-auto text-muted lead">
-          Zwei Schwarz-Weiß-Stile: Starker Kontrast vs. Flaches Grau
-        </p>
-      </header>
+  <section class="container mt-4 d-none" aria-labelledby="results-heading" data-image-processor-target="resultsSection">
+    <header class="mb-4 result-header">
+      <h2 id="results-heading" class="display-3 fw-bolder">
+        <span class="d-block fw-bolder text-dark">Deine Ergebnisse</span>
+      </h2>
 
-      <div class="row g-4 justify-content-center">
-        <% @images&.each_with_index do |image, index| %>
-          <div class="col-md-6" data-controller="histogram">
-            <article class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 result-card">
-              <div class="card-header bg-success text-white py-2 d-flex align-items-center justify-content-between">
-                <span class="fw-bold"><%= image[:label] %></span>
-                <span class="badge bg-white text-success">Version <%= index + 1 %></span>
-              </div>
-              <div class="image-container position-relative px-5">
-                <div class="p-3 d-flex align-items-center justify-content-center">
-                  <img src="<%= image[:src] %>"
-                       class="img-fluid rounded shadow-sm result-image"
-                       alt="Verarbeitetes Schwarz-Weiß-Bild - <%= image[:label] %>"
-                       loading="lazy"
-                       data-histogram-target="image">
-                </div>
-                
-                <div class="histogram-overlay" data-histogram-target="overlay">
-                  <div class="histogram-overlay-header">
-                    <span class="fw-semibold"><i class="bi bi-bar-chart-fill me-2"></i>Helligkeitsverteilung</span>
-                  </div>
-                  <div class="histogram-chart">
-                    <canvas data-histogram-target="canvas" aria-label="Histogramm der Helligkeitsverteilung"></canvas>
-                  </div>
-                </div>
-                <button type="button" 
-                  class="histogram-btn" 
-                  data-histogram-target="button" 
-                  data-action="histogram#toggleOverlay" 
-                  title="Histogramm anzeigen">
-                  <i class="bi bi-bar-chart-fill"></i>
-                </button>
-              </div>
-              <div class="card-footer py-3">
-                <a href="<%= image[:src] %>" 
-                   download="bild_<%= image[:size] %>.jpg" 
-                   class="btn btn-outline-success btn-sm w-100">
-                  <i class="bi bi-download me-1" aria-hidden="true"></i>
-                  Herunterladen
-                </a>
-              </div>
-            </article>
+      <p class="mx-auto text-muted lead">
+        Zwei Schwarz-Weiß-Stile: Starker Kontrast vs. Flaches Grau
+      </p>
+    </header>
+
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-6" data-controller="histogram">
+        <article class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 result-card">
+          <div class="card-header bg-success text-white py-2 d-flex align-items-center justify-content-between">
+            <span class="fw-bold">Starker Kontrast</span>
+            <span class="badge bg-white text-success">Version 1</span>
           </div>
-        <% end %>
+          <div class="image-container position-relative px-5">
+            <div class="p-3 d-flex align-items-center justify-content-center" style="min-height: 300px;">
+              <img src=""
+                   class="img-fluid rounded shadow-sm result-image d-none"
+                   alt="Verarbeitetes Schwarz-Weiß-Bild - Starker Kontrast"
+                   loading="lazy"
+                   data-image-processor-target="previewHighContrast"
+                   data-histogram-target="image">
+              <div class="spinner-border text-primary" role="status" data-image-processor-target="spinnerHighContrast">
+                <span class="visually-hidden">Lädt...</span>
+              </div>
+            </div>
+
+            <div class="histogram-overlay" data-histogram-target="overlay">
+              <div class="histogram-overlay-header">
+                <span class="fw-semibold"><i class="bi bi-bar-chart-fill me-2"></i>Helligkeitsverteilung</span>
+              </div>
+              <div class="histogram-chart">
+                <canvas data-histogram-target="canvas" aria-label="Histogramm der Helligkeitsverteilung"></canvas>
+              </div>
+            </div>
+            <button type="button"
+              class="histogram-btn"
+              data-histogram-target="button"
+              data-action="histogram#toggleOverlay"
+              title="Histogramm anzeigen">
+              <i class="bi bi-bar-chart-fill"></i>
+            </button>
+          </div>
+          <div class="card-footer py-3">
+            <%# Form for download - submits file + variant %>
+            <%# data-turbo="false" prevents Turbo from intercepting the form submission %>
+            <%= form_tag download_image_path, method: :post, multipart: true, data: { turbo: false, image_processor_target: "formHighContrast" } do %>
+              <%= hidden_field_tag :variant, "high_contrast" %>
+              <button type="submit" class="btn btn-outline-success btn-sm w-100" disabled data-image-processor-target="downloadHighContrast">
+                <i class="bi bi-download me-1" aria-hidden="true"></i>
+                Herunterladen
+              </button>
+            <% end %>
+          </div>
+        </article>
       </div>
 
-      <div class="text-center mt-5">
-        <p class="text-muted result-subtitle small mb-3">
-          Diese Bilder wurden temporär generiert und werden nicht gespeichert.
-        </p>
-        <button type="button" class="btn btn-primary" data-action="image-processor#reset">
-          <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
-          Neues Bild verarbeiten
-        </button>
+      <div class="col-md-6" data-controller="histogram">
+        <article class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 result-card">
+          <div class="card-header bg-success text-white py-2 d-flex align-items-center justify-content-between">
+            <span class="fw-bold">Flaches Grau</span>
+            <span class="badge bg-white text-success">Version 2</span>
+          </div>
+          <div class="image-container position-relative px-5">
+            <div class="p-3 d-flex align-items-center justify-content-center" style="min-height: 300px;">
+              <img src=""
+                   class="img-fluid rounded shadow-sm result-image d-none"
+                   alt="Verarbeitetes Schwarz-Weiß-Bild - Flaches Grau"
+                   loading="lazy"
+                   data-image-processor-target="previewFlatGray"
+                   data-histogram-target="image">
+              <div class="spinner-border text-primary" role="status" data-image-processor-target="spinnerFlatGray">
+                <span class="visually-hidden">Lädt...</span>
+              </div>
+            </div>
+
+            <div class="histogram-overlay" data-histogram-target="overlay">
+              <div class="histogram-overlay-header">
+                <span class="fw-semibold"><i class="bi bi-bar-chart-fill me-2"></i>Helligkeitsverteilung</span>
+              </div>
+              <div class="histogram-chart">
+                <canvas data-histogram-target="canvas" aria-label="Histogramm der Helligkeitsverteilung"></canvas>
+              </div>
+            </div>
+            <button type="button"
+              class="histogram-btn"
+              data-histogram-target="button"
+              data-action="histogram#toggleOverlay"
+              title="Histogramm anzeigen">
+              <i class="bi bi-bar-chart-fill"></i>
+            </button>
+          </div>
+          <div class="card-footer py-3">
+            <%# data-turbo="false" prevents Turbo from intercepting the form submission %>
+            <%= form_tag download_image_path, method: :post, multipart: true, data: { turbo: false, image_processor_target: "formFlatGray" } do %>
+              <%= hidden_field_tag :variant, "flat_gray" %>
+              <button type="submit" class="btn btn-outline-success btn-sm w-100" disabled data-image-processor-target="downloadFlatGray">
+                <i class="bi bi-download me-1" aria-hidden="true"></i>
+                Herunterladen
+              </button>
+            <% end %>
+          </div>
+        </article>
       </div>
-    </section>
+    </div>
+
+    <div class="text-center mt-5">
+      <p class="text-muted result-subtitle small mb-3">
+        Diese Bilder wurden temporär generiert und werden nicht gespeichert.
+      </p>
+      <button type="button" class="btn btn-primary" data-action="image-processor#reset">
+        <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
+        Neues Bild verarbeiten
+      </button>
+    </div>
+  </section>
 </main>

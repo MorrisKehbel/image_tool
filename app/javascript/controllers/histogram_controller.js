@@ -10,12 +10,51 @@ export default class extends Controller {
   static targets = ["canvas", "image", "overlay", "button"]
 
   connect() {
-    // Wait for image to load, then generate histogram
-    if (this.imageTarget.complete) {
+    // Bind handlers
+    this.handleImageLoad = this.handleImageLoad.bind(this)
+    this.handleReset = this.reset.bind(this)
+
+    // Listen for load events
+    this.imageTarget.addEventListener("load", this.handleImageLoad)
+
+    // Listen for reset event from image-processor controller
+    window.addEventListener("image-processor:reset", this.handleReset)
+
+    // If image is already loaded with valid data, generate histogram
+    if (this.imageTarget.complete && this.imageTarget.naturalWidth > 0) {
       this.generateHistogram()
-    } else {
-      this.imageTarget.addEventListener("load", () => this.generateHistogram())
     }
+  }
+
+  disconnect() {
+    // Clean up event listeners
+    this.imageTarget.removeEventListener("load", this.handleImageLoad)
+    window.removeEventListener("image-processor:reset", this.handleReset)
+
+    // Destroy chart instance to prevent memory leaks
+    if (this.chart) {
+      this.chart.destroy()
+      this.chart = null
+    }
+  }
+
+  handleImageLoad() {
+    // Only generate if image has valid dimensions
+    if (this.imageTarget.naturalWidth > 0) {
+      this.generateHistogram()
+    }
+  }
+
+  // Reset histogram to initial state
+  reset() {
+    // Hide overlay
+    this.overlayTarget.classList.remove("active")
+
+    // Reset button icon
+    const icon = this.buttonTarget.querySelector("i")
+    icon.classList.remove("bi-x-lg")
+    icon.classList.add("bi-bar-chart-fill")
+    this.buttonTarget.title = "Histogramm anzeigen"
   }
 
   toggleOverlay() {
@@ -92,6 +131,12 @@ export default class extends Controller {
   }
 
   renderChart(data) {
+    // Destroy existing chart if any
+    if (this.chart) {
+      this.chart.destroy()
+      this.chart = null
+    }
+
     // Green color scheme for histograms
     const primaryColor = "rgba(22, 172, 122, 0.8)"
     const gradientColor = "rgba(22, 172, 122, 0.1)"
@@ -106,7 +151,7 @@ export default class extends Controller {
     // Labels for x-axis
     const labels = Array.from({ length: 256 }, (_, i) => i)
 
-    new Chart(ctx, {
+    this.chart = new Chart(ctx, {
       type: "line",
       data: {
         labels: labels,
