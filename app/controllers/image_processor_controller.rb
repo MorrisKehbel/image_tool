@@ -1,4 +1,5 @@
 require "vips"
+require "marcel"
 
 class ImageProcessorController < ApplicationController
   MAX_SIZE = 10.megabytes
@@ -35,7 +36,7 @@ class ImageProcessorController < ApplicationController
     render json: { error: e.message }, status: :unprocessable_entity
   rescue Vips::Error => e
     Rails.logger.error("[ImageProcessor] Vips error: #{e.message}")
-    render json: { error: "Bildverarbeitung fehlgeschlagen" }, status: :unprocessable_entity
+    render json: { error: "Bildverarbeitung fehlgeschlagen." }, status: :unprocessable_entity
   end
 
   # POST /download - Stream image as attachment
@@ -58,24 +59,21 @@ class ImageProcessorController < ApplicationController
     redirect_to root_path
   rescue Vips::Error => e
     Rails.logger.error("[ImageProcessor] Vips error: #{e.message}")
-    flash[:alert] = "Bildverarbeitung fehlgeschlagen. Bitte versuche ein anderes Bild."
+    flash[:alert] = "Bildverarbeitung fehlgeschlagen."
     redirect_to root_path
   end
 
   private
-
-  def upload_params
-    params.permit(:image)
-  end
 
   class ValidationError < StandardError; end
 
   def validate_upload!
     raise ValidationError, "Bitte wähle ein Bild aus." unless params[:image].present?
 
-    content_type = params[:image].content_type.to_s.downcase
-    unless content_type.start_with?("image/")
-      raise ValidationError, "Ungültiges Dateiformat."
+    # Detect MIME type from file contents (magic bytes)
+    detected_type = Marcel::MimeType.for(params[:image].tempfile)
+    unless detected_type.start_with?("image/")
+      raise ValidationError, "Ungültiges Dateiformat: #{detected_type}. Bitte lade ein Bild hoch."
     end
 
     if params[:image].size > MAX_SIZE

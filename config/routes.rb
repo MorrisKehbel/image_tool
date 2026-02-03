@@ -12,9 +12,8 @@ Rails.application.routes.draw do
   # Image processor routes
   root "image_processor#index"
 
-  # POST /preview - Stream low-quality preview
-  post "/preview", to: "image_processor#preview", as: :preview_image
-
-  # POST /download - Stream full-quality image as attachment
-  post "/download", to: "image_processor#download", as: :download_image
+  resource :image, only: [], controller: "image_processor" do
+    post :preview   # POST /image/preview
+    post :download  # POST /image/download
+  end
 end
