@@ -64,6 +64,10 @@ class ImageProcessorController < ApplicationController
 
   private
 
+  def upload_params
+    params.permit(:image)
+  end
+
   class ValidationError < StandardError; end
 
   def validate_upload!
@@ -117,7 +121,6 @@ class ImageProcessorController < ApplicationController
 
   # release libvips memory
   def force_gc_cleanup
-
     # clean up Vips::Image objects
     GC.start
 

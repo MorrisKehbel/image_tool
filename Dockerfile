@@ -60,6 +60,10 @@ RUN yarn install --immutable
 # Copy application code
 COPY . .
 
+# Fix line endings for bin files (in case they were converted to CRLF on Windows)
+RUN sed -i 's/\r$//' bin/* && \
+    chmod +x bin/*
+
 # Precompile bootsnap code for faster boot times.
 # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
 RUN bundle exec bootsnap precompile -j 1 app/ lib/
